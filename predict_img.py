@@ -180,11 +180,4 @@ if __name__ == '__main__':
     cv2.imwrite("{}/pred_color_palette_dst.png".format(args.save), cv2.cvtColor(pred_color_palette_dst, cv2.COLOR_RGB2BGR))
     cv2.imwrite("{}/pred_color_palette_all.png".format(args.save), cv2.cvtColor(pred_color_palette_all, cv2.COLOR_RGB2BGR))
     
-    
-    
-    
-    
-    
-    
-    
-    
+    PIL.Image.fromarray(pred_color_palette_dst).show()
