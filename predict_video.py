@@ -1,7 +1,13 @@
+'''
+Having issue writing to video
+'''
+
+
 import os
 import cv2
 import sys
 import time
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -27,7 +33,7 @@ def visualize_result(img, pred, index=None, show=True):
     if show==True:
         display(PIL.Image.fromarray(im_vis))
     else:
-        return im_vis
+        return pred_color, im_vis
 
 def process_img(path=None, frame=None):
     # Load and normalize one image as a singleton tensor batch
@@ -117,6 +123,24 @@ def transparent_overlays(image, annotation, alpha=0.5):
 
 
 if __name__ == '__main__':
+    
+    parser = argparse.ArgumentParser(description="PyTorch Semantic Segmentation Predict on image")
+    parser.add_argument("-s", "--source", default="0", type=str, metavar='', help="video source")
+    parser.add_argument("-d", "--display", default=1, type=int, metavar='', help="display real time prediction")
+
+    # 'outpy.avi'
+    parser.add_argument("--save", default=None, type=str, metavar='', help="save prediction video to a directory") 
+    parser.add_argument("-a", "--alpha", default=0.6, type=float, metavar='', help="transparent overlay level")
+    parser.add_argument("-r", "--ratio", default=0.7, type=float, metavar='', help="ratio for downsampling source")
+    
+    # parser.add_argument("-s", "--save", default="tmp_results/", type=str, metavar='', help="save prediction to")
+    
+    parser.add_argument("--cfg", default="config/ade20k-resnet50dilated-ppm_deepsup.yaml", 
+                        metavar="FILE", help="path to config file", type=str,)
+    parser.add_argument("--gpu", default=0, type=int, metavar='', help="gpu id for evaluation")
+    parser.add_argument("opts", help="Modify config options using the command-line", 
+                        default=None, nargs=argparse.REMAINDER, metavar='')
+    args = parser.parse_args()
 
     # load model
     colors = scipy.io.loadmat('data/color150.mat')['colors']
@@ -147,7 +171,7 @@ if __name__ == '__main__':
     # creating the videocapture object
     # and reading from the input file
     # Change it to 0 if reading from webcam
-    # cap = cv2.VideoCapture('vid.mp4')
+    '''
     if len(sys.argv) > 2:
         print("Usage: python3 {} <optional mp4_file>".format(sys.argv[0]))
         exit(1)
@@ -155,21 +179,31 @@ if __name__ == '__main__':
         source = 0
     else:
         source = sys.argv[1]
-
-
+    '''
+    
+    try:
+        if int(args.source)==0:
+            source = 0
+    except:
+        source = args.source
+    
     cap = cv2.VideoCapture(source)
+    
+    if (args.save)!=None:
+        frame_width = int((cap.get(3)+250) * args.ratio)
+        frame_height = int(cap.get(4) * args.ratio)
+        out = cv2.VideoWriter("{}tmp_out.avi".format(args.save), 
+                              cv2.VideoWriter_fourcc('M','J','P','G'), 30, (frame_width, frame_height))
 
     # used to record the time when we processed last frame
-    prev_frame_time = 0
-
     # used to record the time at which we processed current frame
+    prev_frame_time = 0
     new_frame_time = 0
 
     # Reading the video file until finished
     while(cap.isOpened()):
 
         # Capture frame-by-frame
-
         ret, frame = cap.read()
 
         # if video finished or no Video Input
@@ -181,7 +215,7 @@ if __name__ == '__main__':
 
         # resizing the frame size according to our need, (affects FPS)
         # gray = cv2.resize(gray, (600, 350))
-        gray = cv2.resize(gray, (int(gray.shape[1]*0.5), int(gray.shape[0]*0.5)))
+        gray = cv2.resize(gray, (int(gray.shape[1]*args.ratio), int(gray.shape[0]*args.ratio)))
 
         # font which we will be using to display FPS
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -189,7 +223,6 @@ if __name__ == '__main__':
         new_frame_time = time.time()
 
         # Calculating the fps
-
         # fps will be number of frame processed in given time frame
         # since their will be most of time error of 0.001 second
         # we will be subtracting it to get more accurate result
@@ -199,17 +232,17 @@ if __name__ == '__main__':
         # converting the fps into integer
         fps = int(fps)
 
-        # converting the fps to string so that we can display it on frame
         # by using putText function
         fps = str(fps)
 
         # predict
         (img_original, singleton_batch, output_size) = process_img(frame=gray)
         pred = predict_img(segmentation_module, singleton_batch, output_size)
-        pred_color = colorEncode(pred, colors).astype(numpy.uint8)
+        # pred_color = colorEncode(pred, colors).astype(numpy.uint8)
         # im_vis = numpy.concatenate((img_original, pred_color), axis=1)
-        #pred_color, im_vis = visualize_result(img_original, pred, show=False)
-        im_vis = transparent_overlays(img_original, pred_color)
+        pred_color, im_vis = visualize_result(img_original, pred, show=False)
+        
+        im_vis = transparent_overlays(img_original, pred_color, alpha=args.alpha)
         color_palette = get_color_palette(pred, im_vis.shape[0])
         im_vis = numpy.concatenate((im_vis, color_palette), axis=1)
 
@@ -218,7 +251,11 @@ if __name__ == '__main__':
         cv2.putText(im_vis, fps, (5, 30), font, 1, (100, 255, 0), 3, cv2.LINE_AA)
 
         # displaying the frame with fps
-        cv2.imshow('frame', im_vis)
+        if (args.save)!=None:
+            out.write(im_vis)
+            
+        if (args.display)==1:
+            cv2.imshow('frame', im_vis)
 
         # press 'Q' if you want to exit
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -226,5 +263,9 @@ if __name__ == '__main__':
 
     # When everything done, release the capture
     cap.release()
+    
+    if (args.save)!=None:
+        out.release()
+    
     # Destroy the all windows now
     cv2.destroyAllWindows()
