@@ -1,6 +1,7 @@
 import os
 import cv2
 import sys
+import yaml
 import time
 import argparse
 import numpy as np
@@ -12,6 +13,29 @@ import os, csv, torch, numpy, scipy.io, PIL.Image, torchvision.transforms
 # Our libs
 from mit_semseg.models import ModelBuilder, SegmentationModule
 from mit_semseg.utils import colorEncode
+
+# pass in mode config(yaml file)
+# return a dict for the file 
+# return decoder and encoder weights path
+def parse_model_config(path):
+    with open(path) as file:
+        data = yaml.load(file, Loader=yaml.FullLoader)
+    
+    encoder_path = None
+    decoder_path = None
+
+    for p in os.listdir(data['DIR']):
+        if "encoder" in p.lower():
+            encoder_path = "{}/{}".format(data['DIR'], p)
+            continue
+        if "decoder" in p.lower():
+            decoder_path = "{}/{}".format(data['DIR'], p)
+            continue
+
+    if encoder_path==None or decoder_path==None:
+        raise("model weights not found")
+        
+    return data, encoder_path, decoder_path
 
 def visualize_result(img, pred, index=None):
     # filter prediction class if requested
@@ -142,6 +166,7 @@ if __name__ == '__main__':
     
     
     # Network Builders
+    '''
     net_encoder = ModelBuilder.build_encoder(
         arch='resnet50dilated',
         fc_dim=2048,
@@ -152,7 +177,21 @@ if __name__ == '__main__':
         num_class=150,
         weights='ckpt/ade20k-resnet50dilated-ppm_deepsup/decoder_epoch_20.pth',
         use_softmax=True)
-
+    '''
+    # Network Builders
+    print("parsing {}".format(args.cfg))
+    model_config, encoder_path, decoder_path = parse_model_config(args.cfg)
+    net_encoder = ModelBuilder.build_encoder(
+        arch = model_config["MODEL"]['arch_encoder'],
+        fc_dim = model_config['MODEL']['fc_dim'],
+        weights = encoder_path)
+    net_decoder = ModelBuilder.build_decoder(
+        arch = model_config["MODEL"]['arch_decoder'],
+        fc_dim = model_config['MODEL']['fc_dim'],
+        num_class = model_config['DATASET']['num_class'],
+        weights = decoder_path,
+        use_softmax=True)
+    
     crit = torch.nn.NLLLoss(ignore_index=-1)
     segmentation_module = SegmentationModule(net_encoder, net_decoder, crit)
     segmentation_module.eval()
