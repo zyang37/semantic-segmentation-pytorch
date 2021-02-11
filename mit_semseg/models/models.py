@@ -27,6 +27,19 @@ class SegmentationModule(SegmentationModuleBase):
         self.deep_sup_scale = deep_sup_scale
 
     def forward(self, feed_dict, *, segSize=None):
+        # added the following for training on 1 gpu
+        # if the dataset is loaded as a list, this will
+        # raise a TypeError while trying to access it as a dictionary.
+        if type(feed_dict) is list:
+            feed_dict = feed_dict[0]
+            # also, convert to torch.cuda.FloatTensor
+            if torch.cuda.is_available():
+                feed_dict['img_data'] = feed_dict['img_data'].cuda()
+                feed_dict['seg_label'] = feed_dict['seg_label'].cuda()
+            else:
+                raise RunTimeError('Cannot convert torch.Floattensor into torch.cuda.FloatTensor')
+        # added above
+        
         # training
         if segSize is None:
             if self.deep_sup_scale is not None: # use deep supervision technique

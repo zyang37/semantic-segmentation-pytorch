@@ -5,6 +5,7 @@ vis/
 log/
 pretrained/
 tmp_results/
+data/ADEChallengeData2016/
 
 .ipynb_checkpoints
 
