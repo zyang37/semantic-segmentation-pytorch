@@ -1,5 +1,6 @@
 '''
 [Fixed] Having issue writing to video
+update display cfg
 '''
 
 
@@ -151,8 +152,9 @@ if __name__ == '__main__':
     parser.add_argument("-s", "--source", default="0", type=str, metavar='', help="video source")
     parser.add_argument("-d", "--display", default=1, type=int, metavar='', help="display real time prediction")
 
-    # 'outpy.avi'
-    parser.add_argument("--save", default=None, type=str, metavar='', help="save prediction video to a directory") 
+    # 'outpy.avi' OR 'mp4 file'
+    parser.add_argument("--save", default=None, type=str, metavar='', help="save prediction video to a directory")
+    parser.add_argument("--fps", default=10, type=int, metavar='', help="fps of the saved prediction video") 
     parser.add_argument("-a", "--alpha", default=0.6, type=float, metavar='', help="transparent overlay level")
     parser.add_argument("-r", "--ratio", default=0.7, type=float, metavar='', help="ratio for downsampling source")
     
@@ -232,8 +234,7 @@ if __name__ == '__main__':
         frame_height = int(cap.get(4) * args.ratio)
         print("w: {}\nh: {}\n".format(frame_width, frame_height))
         # out = cv2.VideoWriter("{}tmp_out.avi".format(args.save),cv2.VideoWriter_fourcc('M','J','P','G'), 30, (frame_width, frame_height))
-        out = cv2.VideoWriter("{}tmp_out.mp4".format(args.save),
-                              cv2.VideoWriter_fourcc(*'MP4V'), 30, (frame_width, frame_height))
+        out = cv2.VideoWriter("{}".format(args.save), cv2.VideoWriter_fourcc(*'MP4V'), args.fps, (frame_width,frame_height))
 
     # used to record the time when we processed last frame
     # used to record the time at which we processed current frame
@@ -295,7 +296,7 @@ if __name__ == '__main__':
             out.write(im_vis)
             
         if (args.display)==1:
-            print("\nim_vis.shape: {}\n".format(im_vis.shape))
+            # print("\nim_vis.shape: {}\n".format(im_vis.shape))
             cv2.imshow('frame', im_vis)
 
         # press 'Q' if you want to exit
