@@ -1,5 +1,5 @@
 '''
-Having issue writing to video
+[Fixed] Having issue writing to video
 '''
 
 
@@ -227,10 +227,13 @@ if __name__ == '__main__':
     cap = cv2.VideoCapture(source)
     
     if (args.save)!=None:
-        frame_width = int((cap.get(3)+250) * args.ratio)
+        # frame_width = int((cap.get(3)+250) * args.ratio)
+        frame_width = int(cap.get(3) * args.ratio + 250)
         frame_height = int(cap.get(4) * args.ratio)
-        out = cv2.VideoWriter("{}tmp_out.avi".format(args.save), 
-                              cv2.VideoWriter_fourcc('M','J','P','G'), 30, (frame_width, frame_height))
+        print("w: {}\nh: {}\n".format(frame_width, frame_height))
+        # out = cv2.VideoWriter("{}tmp_out.avi".format(args.save),cv2.VideoWriter_fourcc('M','J','P','G'), 30, (frame_width, frame_height))
+        out = cv2.VideoWriter("{}tmp_out.mp4".format(args.save),
+                              cv2.VideoWriter_fourcc(*'MP4V'), 30, (frame_width, frame_height))
 
     # used to record the time when we processed last frame
     # used to record the time at which we processed current frame
@@ -292,6 +295,7 @@ if __name__ == '__main__':
             out.write(im_vis)
             
         if (args.display)==1:
+            print("\nim_vis.shape: {}\n".format(im_vis.shape))
             cv2.imshow('frame', im_vis)
 
         # press 'Q' if you want to exit
