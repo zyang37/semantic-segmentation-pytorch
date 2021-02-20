@@ -162,7 +162,8 @@ if __name__ == '__main__':
     
     parser.add_argument("--cfg", default="config/ade20k-resnet50dilated-ppm_deepsup.yaml", 
                         metavar="FILE", help="path to config file", type=str,)
-    parser.add_argument("--gpu", default=0, type=int, metavar='', help="gpu id for evaluation")
+    #parser.add_argument("--gpu", default=0, type=int, metavar='', help="gpu id for evaluation")
+    parser.add_argument("--gpus", default="0", metavar='', help="gpu id for evaluation")
     parser.add_argument("opts", help="Modify config options using the command-line", 
                         default=None, nargs=argparse.REMAINDER, metavar='')
     args = parser.parse_args()
