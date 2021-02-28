@@ -145,6 +145,7 @@ if __name__ == '__main__':
     parser.add_argument("-i", "--img", required=True, type=str, metavar='', help="an image path")
     parser.add_argument("-a", "--alpha", default=0.6, type=float, metavar='', help="transparent overlay level")
     parser.add_argument("-s", "--save", default="tmp_results/", type=str, metavar='', help="save prediction to")
+    parser.add_argument("-d", "--display", default=1, type=int, metavar='', help="display real time prediction")
     
     parser.add_argument("--cfg", default="config/ade20k-resnet50dilated-ppm_deepsup.yaml", 
                         metavar="FILE", help="path to config file", type=str,)
@@ -219,4 +220,7 @@ if __name__ == '__main__':
     cv2.imwrite("{}/pred_color_palette_dst.png".format(args.save), cv2.cvtColor(pred_color_palette_dst, cv2.COLOR_RGB2BGR))
     cv2.imwrite("{}/pred_color_palette_all.png".format(args.save), cv2.cvtColor(pred_color_palette_all, cv2.COLOR_RGB2BGR))
     
-    PIL.Image.fromarray(pred_color_palette_dst).show()
+    if (args.display)==1:
+        PIL.Image.fromarray(pred_color_palette_dst).show()
+    else:
+        print("results saved")

@@ -5,7 +5,9 @@ import yaml
 import time
 import argparse
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
+from shutil import copyfile
 import matplotlib.pyplot as plt
 
 ##################### model stuff #####################
@@ -19,6 +21,10 @@ from mit_semseg.lib.utils import as_numpy
 from mit_semseg.models import ModelBuilder, SegmentationModule
 from mit_semseg.lib.nn import user_scattered_collate, async_copy_to
 from mit_semseg.utils import AverageMeter, colorEncode, accuracy, intersectionAndUnion, setup_logger
+
+##################### noise stuff #####################
+sys.path.insert(1, '/home/zyang/Documents/Noisey-image')
+from noise_video_gen import *
 
 # pass in mode config(yaml file)
 # return a dict for the file 
@@ -145,6 +151,7 @@ def transparent_overlays(image, annotation, alpha=0.5):
     return dst
 
 
+# removed tqdm bars
 def evaluate(segmentation_module, loader, cfg, gpu):
     acc_meter = AverageMeter()
     intersection_meter = AverageMeter()
@@ -153,7 +160,7 @@ def evaluate(segmentation_module, loader, cfg, gpu):
 
     segmentation_module.eval()
 
-    pbar = tqdm(total=len(loader), leave=False)
+    #pbar = tqdm(total=len(loader), leave=False)
     for batch_data in loader:
         # process data
         batch_data = batch_data[0]
@@ -199,7 +206,7 @@ def evaluate(segmentation_module, loader, cfg, gpu):
                 os.path.join(cfg.DIR, 'result')
             )
 
-        pbar.update(1)
+        #pbar.update(1)
 
     # summary
     iou = intersection_meter.sum / (union_meter.sum + 1e-10)
@@ -222,7 +229,7 @@ def create_tmp_obgt(img_path, anno_path, width, height, tmp_path="tmp_results/tm
     f.close()
     
     
-def setup_oneImg_loader(img_path, anno_path, tmp_path="tmp_results/tmp_eval.odgt"):
+def setup_oneImg_loader(img_path, anno_path, tmp_path="tmp_results/tmp_eval.odgt", update=0):
     img = PIL.Image.open(img_path).convert('RGB')
     anno_rgb = PIL.Image.open(anno_path).convert('RGB')
     anno = PIL.Image.open(anno_path)
@@ -233,7 +240,8 @@ def setup_oneImg_loader(img_path, anno_path, tmp_path="tmp_results/tmp_eval.odgt
     height = img.size[1]
     # im_vis = numpy.concatenate((img, anno_rgb), axis=1)
     # display(PIL.Image.fromarray(im_vis))
-    create_tmp_obgt(img_path, anno_path, width, height, tmp_path=tmp_path)
+    if update==0:
+        create_tmp_obgt(img_path, anno_path, width, height, tmp_path=tmp_path)
     
     # Dataset and Loader
     dataset_val = ValDataset("", tmp_path, cfg.DATASET)
@@ -244,29 +252,37 @@ def setup_oneImg_loader(img_path, anno_path, tmp_path="tmp_results/tmp_eval.odgt
         collate_fn=user_scattered_collate,
         num_workers=1,
         drop_last=True)
-    
     return loader_val
 
-    
+# MAIN
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="PyTorch Semantic Segmentation Evaluate one image")
+    parser = argparse.ArgumentParser(description="Evaluate an image with different levels of noises")
     parser.add_argument("-i", "--img",
                         default="data/ADEChallengeData2016/images/training/ADE_train_00000001.jpg", 
                         type=str, metavar='', help="an image path")
     parser.add_argument("-a", "--anno", 
                         default="data/ADEChallengeData2016/annotations/training/ADE_train_00000001.png", 
                         type=str, metavar='', help="an annotation path")
-    # parser.add_argument("--alpha", default=0.6, type=float, metavar='', help="transparent overlay level")
-    parser.add_argument("-s", "--save", default="tmp_results/", type=str, metavar='', help="save prediction to")
     
+    parser.add_argument("-c", "--count", default=10, type=int, metavar='', help="#loop")
+    parser.add_argument("-r", "--rate", default=0.0005, type=float, metavar='', help="#loop")
+    parser.add_argument("-s", "--save", default="tmp_results/tmp.csv", type=str, metavar='', help="save prediction to")
     parser.add_argument("--cfg", default="config/ade20k-resnet50dilated-ppm_deepsup.yaml", 
                         metavar="FILE", help="path to config file", type=str,)
     parser.add_argument("--gpu", default=0, type=int, metavar='', help="gpu id for evaluation")
     parser.add_argument("opts", help="Modify config options using the command-line", 
                         default=None, nargs=argparse.REMAINDER, metavar='')
     args = parser.parse_args()
-        
-    # print(args.save)
+    
+    img_path = args.img
+    anno_path = args.anno
+    tmp_img_path = 'tmp_results/tmp.jpg'
+    
+    '''
+    anno = PIL.Image.open(anno_path)
+    anno = np.array(anno)
+    anno[np.where(anno!=0)]-=1
+    '''
     
     # colors
     colors = scipy.io.loadmat('data/color150.mat')['colors']
@@ -297,41 +313,41 @@ if __name__ == '__main__':
     
     crit = torch.nn.NLLLoss(ignore_index=-1)
     segmentation_module = SegmentationModule(net_encoder, net_decoder, crit)
-    # segmentation_module.eval()
     segmentation_module.cuda()
     
-    # predict on 1 img
-    print("\nEvaluation on\nImages: {}\nAnnotation: {}\n".format(args.img, args.anno))
-    img_path = args.img
-    anno_path = args.anno
     
-    '''
-    img = PIL.Image.open(img_path).convert('RGB')
-    anno_rgb = PIL.Image.open(anno_path).convert('RGB')
-    anno = PIL.Image.open(anno_path)
-    anno = np.array(anno)
-    anno[np.where(anno!=0)]-=1
+    count = 0
+    all_amount = []
+    all_acc = []
+    pred_num_class = []
 
-    width = img.size[0]
-    height = img.size[1]
+    # noise
+    copyfile(img_path, tmp_img_path)
 
-    # im_vis = numpy.concatenate((img, anno_rgb), axis=1)
-    # display(PIL.Image.fromarray(im_vis))
-    create_tmp_obgt(img_path, anno_path, tmp_path="tmp_results/tmp_eval.odgt")
+    img = cv2.imread(tmp_img_path)
+    org_img = img.copy()
+
+    amount = 0.0
+    for i in tqdm(range(args.count)):
+        loader_val = setup_oneImg_loader(tmp_img_path, anno_path, tmp_path="tmp_results/tmp_eval.odgt", update=0)
+        # segmentation_module.cuda()
+        pred, acc = evaluate(segmentation_module, loader_val, cfg, 0)
+
+        all_amount.append(amount)
+        all_acc.append(acc)
+        pred_num_class.append(len(np.unique(pred)))
+
+        amount+=args.rate
+        frame = saltAndPapper_noise(org_img, s_vs_p=0.5, amount=amount)
+
+        # overwrite tmp.jpg
+        cv2.imwrite(tmp_img_path, frame)
+         
+        
+    df = pd.DataFrame()
+    df['amount'] = all_amount
+    df['PixelAcc'] = all_acc
+    df['num_class'] = pred_num_class
+    df.to_csv(args.save, index=0)
     
-    # Dataset and Loader
-    dataset_val = ValDataset("", "tmp_results/tmp_eval.odgt", cfg.DATASET)
-    loader_val = torch.utils.data.DataLoader(
-        dataset_val,
-        batch_size=1,
-        shuffle=False,
-        collate_fn=user_scattered_collate,
-        num_workers=1,
-        drop_last=True)
-    '''
-    loader_val = setup_oneImg_loader(img_path, anno_path)
-    
-    # Main loop
-    pred, acc = evaluate(segmentation_module, loader_val, cfg, args.gpu)
-    print("\nAccuracy: {:.2f}\n".format(acc))
-    os.remove("tmp_results/tmp_eval.odgt")
+    print("\nsaved to {}".format(args.save))
