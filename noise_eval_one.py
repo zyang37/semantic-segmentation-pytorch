@@ -265,7 +265,7 @@ if __name__ == '__main__':
                         type=str, metavar='', help="an annotation path")
     
     parser.add_argument("-c", "--count", default=10, type=int, metavar='', help="#loop")
-    parser.add_argument("-r", "--rate", default=0.0005, type=float, metavar='', help="#loop")
+    parser.add_argument("-r", "--rate", default=0.001, type=float, metavar='', help="#loop")
     parser.add_argument("-s", "--save", default="tmp_results/tmp.csv", type=str, metavar='', help="save prediction to")
     parser.add_argument("--cfg", default="config/ade20k-resnet50dilated-ppm_deepsup.yaml", 
                         metavar="FILE", help="path to config file", type=str,)
