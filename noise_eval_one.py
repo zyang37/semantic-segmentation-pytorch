@@ -338,7 +338,8 @@ if __name__ == '__main__':
         pred_num_class.append(len(np.unique(pred)))
 
         amount+=args.rate
-        frame = saltAndPapper_noise(org_img, s_vs_p=0.5, amount=amount)
+        # frame = saltAndPapper_noise(org_img, s_vs_p=0.5, amount=amount)
+        frame = saltAndPapper_noise(org_img, amount)
 
         # overwrite tmp.jpg
         cv2.imwrite(tmp_img_path, frame)
