@@ -151,6 +151,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="PyTorch Semantic Segmentation Predict on image")
     parser.add_argument("-s", "--source", default="0", type=str, metavar='', help="video source")
     parser.add_argument("-d", "--display", default=1, type=int, metavar='', help="display real time prediction")
+    parser.add_argument("-dm", "--dmode", default=0, type=int, metavar='', help="display mode")
 
     # 'outpy.avi' OR 'mp4 file'
     parser.add_argument("--save", default=None, type=str, metavar='', help="save prediction video to a directory")
@@ -166,6 +167,8 @@ if __name__ == '__main__':
     parser.add_argument("opts", help="Modify config options using the command-line", 
                         default=None, nargs=argparse.REMAINDER, metavar='')
     args = parser.parse_args()
+    
+    mode = args.dmode
 
     # load model
     colors = scipy.io.loadmat('data/color150.mat')['colors']
@@ -279,16 +282,21 @@ if __name__ == '__main__':
         # predict
         (img_original, singleton_batch, output_size) = process_img(frame=gray)
         pred = predict_img(segmentation_module, singleton_batch, output_size)
-        # pred_color = colorEncode(pred, colors).astype(numpy.uint8)
-        # im_vis = numpy.concatenate((img_original, pred_color), axis=1)
         pred_color, im_vis = visualize_result(img_original, pred, show=False)
         
-        im_vis = transparent_overlays(img_original, pred_color, alpha=args.alpha)
+        # transparent_overlays (mode=0)
+        if mode==0:
+            im_vis = transparent_overlays(img_original, pred_color, alpha=args.alpha)
+        # split org | pred
+        elif mode==1:
+            im_vis = numpy.concatenate((img_original, pred_color), axis=1)
+        elif mode==2:
+            im_vis = numpy.concatenate((pred_color, img_original), axis=0)
+        
         color_palette = get_color_palette(pred, im_vis.shape[0])
         im_vis = numpy.concatenate((im_vis, color_palette), axis=1)
 
         # puting the FPS count on the frame
-        # cv2.putText(gray, fps, (5, 30), font, 1, (100, 255, 0), 3, cv2.LINE_AA)
         cv2.putText(im_vis, fps, (5, 30), font, 1, (100, 255, 0), 3, cv2.LINE_AA)
 
         # displaying the frame with fps
