@@ -3,6 +3,7 @@
 ckpt/
 vis/
 log/
+old/
 pretrained/
 tmp_results/
 data/ADEChallengeData2016/
