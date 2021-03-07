@@ -155,7 +155,7 @@ if __name__ == '__main__':
 
     # 'outpy.avi' OR 'mp4 file'
     parser.add_argument("--save", default=None, type=str, metavar='', help="save prediction video to a directory")
-    parser.add_argument("--fps", default=10, type=int, metavar='', help="fps of the saved prediction video") 
+    parser.add_argument("--fps", default=5, type=int, metavar='', help="fps of the saved prediction video") 
     parser.add_argument("-a", "--alpha", default=0.6, type=float, metavar='', help="transparent overlay level")
     parser.add_argument("-r", "--ratio", default=0.7, type=float, metavar='', help="ratio for downsampling source")
     
@@ -232,9 +232,18 @@ if __name__ == '__main__':
     cap = cv2.VideoCapture(source)
     
     if (args.save)!=None:
-        # frame_width = int((cap.get(3)+250) * args.ratio)
-        frame_width = int(cap.get(3) * args.ratio + 250)
+        # frame_width = int(cap.get(3) * args.ratio + 250)
+        frame_width = int(cap.get(3) * args.ratio)
+        frame_width += 250
+        
         frame_height = int(cap.get(4) * args.ratio)
+        
+        if args.dmode==1:
+            frame_width = (frame_width-250)*2 + 250
+            
+        if args.dmode==2:
+            frame_height *= 2
+        
         print("w: {}\nh: {}\n".format(frame_width, frame_height))
         # out = cv2.VideoWriter("{}tmp_out.avi".format(args.save),cv2.VideoWriter_fourcc('M','J','P','G'), 30, (frame_width, frame_height))
         out = cv2.VideoWriter("{}".format(args.save), cv2.VideoWriter_fourcc(*'MP4V'), args.fps, (frame_width,frame_height))
