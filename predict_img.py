@@ -139,6 +139,24 @@ def transparent_overlays(image, annotation, alpha=0.5):
     return dst
 
 
+def load_model_from_cfg(cfg):
+    model_config, encoder_path, decoder_path = parse_model_config(cfg)
+    net_encoder = ModelBuilder.build_encoder(
+        arch = model_config["MODEL"]['arch_encoder'],
+        fc_dim = model_config['MODEL']['fc_dim'],
+        weights = encoder_path)
+    net_decoder = ModelBuilder.build_decoder(
+        arch = model_config["MODEL"]['arch_decoder'],
+        fc_dim = model_config['MODEL']['fc_dim'],
+        num_class = model_config['DATASET']['num_class'],
+        weights = decoder_path,
+        use_softmax=True)
+    
+    crit = torch.nn.NLLLoss(ignore_index=-1)
+    segmentation_module = SegmentationModule(net_encoder, net_decoder, crit)
+    return segmentation_module
+    
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description="PyTorch Semantic Segmentation Predict on image")
@@ -167,20 +185,10 @@ if __name__ == '__main__':
     
     
     # Network Builders
-    '''
-    net_encoder = ModelBuilder.build_encoder(
-        arch='resnet50dilated',
-        fc_dim=2048,
-        weights='ckpt/ade20k-resnet50dilated-ppm_deepsup/encoder_epoch_20.pth')
-    net_decoder = ModelBuilder.build_decoder(
-        arch='ppm_deepsup',
-        fc_dim=2048,
-        num_class=150,
-        weights='ckpt/ade20k-resnet50dilated-ppm_deepsup/decoder_epoch_20.pth',
-        use_softmax=True)
-    '''
-    # Network Builders
     print("parsing {}".format(args.cfg))
+    segmentation_module = load_model_from_cfg(args.cfg)
+    
+    '''
     model_config, encoder_path, decoder_path = parse_model_config(args.cfg)
     net_encoder = ModelBuilder.build_encoder(
         arch = model_config["MODEL"]['arch_encoder'],
@@ -195,6 +203,7 @@ if __name__ == '__main__':
     
     crit = torch.nn.NLLLoss(ignore_index=-1)
     segmentation_module = SegmentationModule(net_encoder, net_decoder, crit)
+    '''
     segmentation_module.eval()
     segmentation_module.cuda()
     
@@ -202,15 +211,22 @@ if __name__ == '__main__':
     # predict
     img_original, singleton_batch, output_size = process_img(args.img)
     pred = predict_img(segmentation_module, singleton_batch, output_size)
-    print(type(img_original))
+    # print(type(img_original))
     pred_color, org_pred_split = visualize_result(img_original, pred)
     
     # color_palette
     color_palette = get_color_palette(pred, org_pred_split.shape[0])
     
+    # transparent pred on org
     dst = transparent_overlays(img_original, pred_color, alpha=args.alpha)
+    
+    # colored_pred + color_palette
     pred_color_palette = numpy.concatenate((color_palette, pred_color), axis=1)
+    
+    # transparent pred on org + color_palette
     pred_color_palette_dst = numpy.concatenate((color_palette, dst), axis=1)
+    
+    # org + colored_pred + color_palette
     pred_color_palette_all = numpy.concatenate((org_pred_split, color_palette), axis=1)
     
     cv2.imwrite("{}/pred_color.png".format(args.save), cv2.cvtColor(pred_color, cv2.COLOR_RGB2BGR))
