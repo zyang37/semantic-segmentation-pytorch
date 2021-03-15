@@ -1,6 +1,6 @@
 # Realtime Semantic Segmentation
 
-[Old_README.md](https://github.com/zyang37/semantic-segmentation-pytorch/blob/master/ORG_README.md)
+[Original Repository](https://github.com/CSAILVision/semantic-segmentation-pytorch)  
 
 This repository focuses on model inference and visualization.
 
