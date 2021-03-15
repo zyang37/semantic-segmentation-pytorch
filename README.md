@@ -5,13 +5,13 @@
 This repository focuses on model inference and visualization.
 
 1. Different ways of displaying the result
-  - side-by-side (Provided by the original repo)
-  - Transparent prediction mask
-  - A color palette showing classes
+    - side-by-side (Provided by the original repo)
+    - Transparent prediction mask
+    - A color palette showing classes
 2. Predict on video
-  - mp4 video files
-  - realtime inference with webcam
-  - saving prediction video
+    - mp4 video files
+    - realtime inference with webcam
+    - saving prediction video
 
 
 ## Scripts
