@@ -1,0 +1,1 @@
+python3 realtime_noise_eval.py -i data/tmp/ADE_train_00000001.jpg --figsize 11,9 -l 1 --dm 1 -r 0.85

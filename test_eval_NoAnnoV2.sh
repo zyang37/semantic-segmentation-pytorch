@@ -1,0 +1,1 @@
+python3 realtime_noise_eval.py -i data/tmp/car_detection_sample.png --anno '' --figsize 10,8 -l 0 --dm 3 -r 0.38 --cfg config/ade20k-hrnetv2.yaml

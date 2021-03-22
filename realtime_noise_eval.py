@@ -19,7 +19,8 @@ from mit_semseg.models import ModelBuilder, SegmentationModule
 from mit_semseg.utils import AverageMeter, colorEncode, accuracy, intersectionAndUnion, setup_logger
 
 sys.path.insert(1, '/home/zyang/Documents/Noisey-image')
-from noise_video_gen import *
+#from noise_video_gen import *
+from noises import *
 
 # pass in mode config(yaml file)
 # return a dict for the file 
@@ -236,7 +237,7 @@ if __name__ == '__main__':
     
     parser.add_argument("--figsize", default="13,12", type=str, metavar='', help="size of the figure")
     parser.add_argument("-l", "--legend", default=1, type=int, metavar='', help="display legend or not")
-    
+    parser.add_argument("--rate", default=0.0001, type=float, metavar='', help="noise level increase rate")
     # 0: org | pred | cp
     # 1: org Vertical pred | cp
     # 2: org | pred
@@ -275,20 +276,37 @@ if __name__ == '__main__':
     # read img for pred
     # read annotation img
     img = cv2.imread(args.img)
-    anno = get_anno(args.anno)
-    gt_classes = np.unique(anno)
     
     amount = 0.0
-    rate = 0.0001
+    #rate = 0.0001
+    rate = args.rate
     
     plt.style.use('ggplot')
     fig, axs = plt.subplots(2,2, figsize=(int(args.figsize.split(',')[0]), int(args.figsize.split(',')[1])))
-    #fig.suptitle('Salt & Pepper Noise')
+    
+    # it can take a anno OR compare to itself
+    self_compare = 0
+    try:
+        anno = get_anno(args.anno)
+        gt_classes = np.unique(anno)
+    except:
+        self_compare = 1
+        img_original, singleton_batch, output_size = process_img(frame=img)        
+        anno = predict_img(segmentation_module, singleton_batch, output_size)
+        gt_classes = np.unique(anno)
+        fig.suptitle('NO Annotation', fontsize=15)
+        
     
     # test Process
     p = Pool(processes=2)
     
     while(True):
+        
+        if self_compare==1:
+            amount = amount + rate
+            self_compare = 0
+            continue
+        
         noise_levels.append(amount)
         img_original, singleton_batch, output_size = process_img(frame=img)        
         pred = predict_img(segmentation_module, singleton_batch, output_size)
@@ -319,8 +337,12 @@ if __name__ == '__main__':
         if args.legend==1:
             axs[1][1].legend()
         
+        for ax in fig.axes:
+            plt.sca(ax)
+            plt.xticks(rotation=45)
+        
         fig.tight_layout()
-        plt.pause(0.001)
+        plt.pause(0.005)
         
         # Multi process on noise function
         #img = saltAndPapper_noise(img, amount)
@@ -345,7 +367,6 @@ if __name__ == '__main__':
             frame = org_pred_split
         elif mode==3:
             frame = numpy.concatenate((img_original, pred_color), axis=0)
-
         
         if (args.display)==1:
             dsize = (int(r*frame.shape[1]), int(r*frame.shape[0]))
