@@ -206,10 +206,14 @@ def process_class_ious(class_ious, anno, name_iou=None):
     return name_iou
 
 
-def sub_line_plt(ax, x, y, title=None, label=None, color='r', yl=None, xl=None, clear=True):
+def sub_line_plt(ax, x, y, title=None, label=None, color='r', yl=None, xl=None, clear=True, ylim=None):
     if clear:
         ax.clear()
     ax.set_title(title)
+    
+    if ylim!=None:
+        ax.set_ylim(ylim)
+    
     if color!='random':
         ax.plot(x, y, label=label, color=color)
     else:
@@ -276,6 +280,7 @@ if __name__ == '__main__':
     # read img for pred
     # read annotation img
     img = cv2.imread(args.img)
+    org_img = img.copy()
     
     amount = 0.0
     #rate = 0.0001
@@ -321,18 +326,18 @@ if __name__ == '__main__':
         
         # realtime plotting 
         sub_line_plt(axs[0][0], noise_levels, accs, title='Pixel Accuracy', 
-                     label="acc", color='r', yl='Pixel Accuracy', xl=None)
+                     label="acc", color='r', yl='Pixel Accuracy', xl=None, ylim=[0,1])
         
         sub_line_plt(axs[0][1], noise_levels, mean_ious, title='Mean IoU', 
-                     label="meanIoU", color='r', yl='Mean IoU', xl=None)
+                     label="meanIoU", color='r', yl='Mean IoU', xl=None, ylim=[0,max(mean_ious)])
         
         sub_line_plt(axs[1][0], noise_levels, class_num, label="class_num", title='Number of Classes',
-                     color='b', yl='Number of Classes', xl='Noise Levels (Amount)')
+                     color='b', yl='Number of Classes', xl='Noise Levels (Amount)', ylim=[0, max(class_num)])
         
         axs[1][1].clear()
         for k, v in className_ious.items():
             sub_line_plt(axs[1][1], noise_levels[:len(v)], v, label=k, title='Class IoU', color='random',
-                     yl='Class IoU', xl='Noise Levels (Amount)', clear=False)
+                     yl='Class IoU', xl='Noise Levels (Amount)', clear=False, ylim=[0,1])
             
         if args.legend==1:
             axs[1][1].legend()
@@ -356,25 +361,44 @@ if __name__ == '__main__':
         
         # split org | pred | cp
         if mode==0:
-            color_palette = get_color_palette(pred, org_pred_split.shape[0])
-            frame = numpy.concatenate((org_pred_split, color_palette), axis=1)
-        # split org |v pred | cp
+            #color_palette = get_color_palette(pred, org_pred_split.shape[0])
+            #frame = numpy.concatenate((org_pred_split, color_palette), axis=1)
+            frame = numpy.concatenate((img_original, org_img), axis=1)
+            frame = numpy.concatenate((frame, pred_color), axis=1)
+        # split noise |v org |v pred | cp
         elif mode==1:
-            frame = numpy.concatenate((img_original, pred_color), axis=0)
+            # frame = numpy.concatenate((img_original, pred_color), axis=0)
+            frame = numpy.concatenate((img_original, org_img), axis=0)
+            frame = numpy.concatenate((frame, pred_color), axis=0)
+            #color_palette = get_color_palette(pred, frame.shape[0])
+            #frame = numpy.concatenate((frame, color_palette), axis=1)
+        '''
+        elif mode==2:
+            #frame = org_pred_split
+            frame = numpy.concatenate((img_original, org_img), axis=1)
+            frame = numpy.concatenate((frame, pred_color), axis=1)
             color_palette = get_color_palette(pred, frame.shape[0])
             frame = numpy.concatenate((frame, color_palette), axis=1)
-        elif mode==2:
-            frame = org_pred_split
         elif mode==3:
-            frame = numpy.concatenate((img_original, pred_color), axis=0)
+            #frame = numpy.concatenate((img_original, pred_color), axis=0)
+            frame = numpy.concatenate((img_original, org_img), axis=0)
+            frame = numpy.concatenate((frame, pred_color), axis=0)
+            color_palette = get_color_palette(pred, frame.shape[0])
+            frame = numpy.concatenate((frame, color_palette), axis=1)
+        '''
         
         if (args.display)==1:
             dsize = (int(r*frame.shape[1]), int(r*frame.shape[0]))
             frame = cv2.resize(frame, dsize)
             cv2.imshow('frame', frame)
         
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        key = cv2.waitKey(1) & 0xFF
+        #if cv2.waitKey(1) & 0xFF == ord('q'):
+        #    break          
+        if key == ord('q'):
             break
+        elif key == ord('p'):
+            cv2.waitKey(-1)
          
     
     p.close()

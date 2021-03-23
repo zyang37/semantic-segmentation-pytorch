@@ -1,1 +1,1 @@
-python3 realtime_noise_eval.py -i data/tmp/car_detection_sample.png --anno '' --figsize 10,8 -l 0 --dm 3 -r 0.38
+python3 realtime_noise_eval.py -i data/tmp/car_detection_sample.png --anno '' --figsize 11,9 -l 0 --dm 1 -r 0.3
