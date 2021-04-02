@@ -14,3 +14,6 @@ ADE_val*.jpg
 ADE_val*.png
 
 .idea/
+
+quick_push.sh
+git_token
