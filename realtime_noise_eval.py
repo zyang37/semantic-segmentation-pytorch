@@ -18,7 +18,7 @@ from mit_semseg.utils import colorEncode
 from mit_semseg.models import ModelBuilder, SegmentationModule
 from mit_semseg.utils import AverageMeter, colorEncode, accuracy, intersectionAndUnion, setup_logger
 
-sys.path.insert(1, '/home/zyang/Documents/Noisey-image')
+sys.path.insert(1, '/home/zyang/Documents/Noisey-image/src/')
 #from noise_video_gen import *
 from noises import *
 

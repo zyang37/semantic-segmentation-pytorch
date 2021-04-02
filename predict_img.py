@@ -70,7 +70,10 @@ def process_img(path=None, frame=None):
 
     img_original = numpy.array(pil_image)
     img_data = pil_to_tensor(pil_image)
-    singleton_batch = {'img_data': img_data[None].cuda()}
+    if torch.cuda.is_available():
+        singleton_batch = {'img_data': img_data[None].cuda()}
+    else:
+        singleton_batch = {'img_data': img_data[None]}
     output_size = img_data.shape[1:]
     return (img_original, singleton_batch, output_size)
 
@@ -205,7 +208,9 @@ if __name__ == '__main__':
     segmentation_module = SegmentationModule(net_encoder, net_decoder, crit)
     '''
     segmentation_module.eval()
-    segmentation_module.cuda()
+    
+    if torch.cuda.is_available():
+        segmentation_module.cuda()
     
     
     # predict
