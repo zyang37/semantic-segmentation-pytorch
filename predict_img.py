@@ -238,4 +238,7 @@ if __name__ == '__main__':
     if (args.display)==1:
         PIL.Image.fromarray(pred_color_palette_dst).show()
     else:
-        print("results saved")
+        if os.path.isdir(args.save):
+            print("results saved at {}".format(args.save))
+        else:
+            print("{} not found".format(args.save))
