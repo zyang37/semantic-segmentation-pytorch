@@ -14,6 +14,9 @@ import os, csv, torch, numpy, scipy.io, PIL.Image, torchvision.transforms
 from mit_semseg.models import ModelBuilder, SegmentationModule
 from mit_semseg.utils import colorEncode
 
+# tmp
+from timeit import default_timer as timer
+
 # pass in mode config(yaml file)
 # return a dict for the file 
 # return decoder and encoder weights path
@@ -189,33 +192,24 @@ if __name__ == '__main__':
     
     # Network Builders
     print("parsing {}".format(args.cfg))
+    start = timer()
     segmentation_module = load_model_from_cfg(args.cfg)
-    
-    '''
-    model_config, encoder_path, decoder_path = parse_model_config(args.cfg)
-    net_encoder = ModelBuilder.build_encoder(
-        arch = model_config["MODEL"]['arch_encoder'],
-        fc_dim = model_config['MODEL']['fc_dim'],
-        weights = encoder_path)
-    net_decoder = ModelBuilder.build_decoder(
-        arch = model_config["MODEL"]['arch_decoder'],
-        fc_dim = model_config['MODEL']['fc_dim'],
-        num_class = model_config['DATASET']['num_class'],
-        weights = decoder_path,
-        use_softmax=True)
-    
-    crit = torch.nn.NLLLoss(ignore_index=-1)
-    segmentation_module = SegmentationModule(net_encoder, net_decoder, crit)
-    '''
+    end = timer()
     segmentation_module.eval()
     
     if torch.cuda.is_available():
         segmentation_module.cuda()
     
+    print("Load time: {}".format(end - start))
     
     # predict
     img_original, singleton_batch, output_size = process_img(args.img)
+    
+    start = timer()
     pred = predict_img(segmentation_module, singleton_batch, output_size)
+    end = timer()
+    print("Inference time: {}\n".format(end - start))
+    
     # print(type(img_original))
     pred_color, org_pred_split = visualize_result(img_original, pred)
     
