@@ -122,6 +122,24 @@ python3 predict_video.py -s 4k_road.mp4 --ratio 0.2
 ***Realtime Inference on a 4K video (FPS on top left)***  
 <img src="./teaser/realtime1.png" width="900"/>
 
+## Inference Time
+Download 7 pre-trained weights
+```
+bash download_all_weights.sh
+```
+
+Run each model on a sample image "teaser/car_detection_sample.png". And all outputs will be pipe into ```inference_time.res```
+```
+bash test_time_all.sh 
+```
+It will first run on GPU then CPU. NOTE: if you run into OOM error on GPU, leave the shell script running. (Skipping OOM ones for now)
+
+To Check the results
+```
+cat inference_time.res  | grep time
+```
+
+
 ## Evaluation on Noisy Environment (in progress)
 [Repository for noise generation](https://github.com/Rus00/Noisey-image)
 - ```evaluate_one_img.py```  
