@@ -40,7 +40,7 @@ def parse_model_config(path):
 
     return data, encoder_path, decoder_path
 
-def visualize_result(img, pred, index=None):
+def visualize_result(img, pred, colors, index=None):
     # filter prediction class if requested
     if index is not None:
         pred = pred.copy()
@@ -211,7 +211,7 @@ if __name__ == '__main__':
     print("Inference time: {}\n".format(end - start))
 
     # print(type(img_original))
-    pred_color, org_pred_split = visualize_result(img_original, pred)
+    pred_color, org_pred_split = visualize_result(img_original, pred, colors)
 
     # color_palette
     color_palette = get_color_palette(pred, names, colors, org_pred_split.shape[0])
