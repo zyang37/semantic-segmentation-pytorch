@@ -91,7 +91,7 @@ def predict_img(segmentation_module, singleton_batch, output_size):
     return pred
 
 
-def get_color_palette(pred, names, colors, bar_height):
+def get_color_palette(pred, names, colors, bar_height, show=True):
 
     pred = np.int32(pred)
     pixs = pred.size
@@ -109,7 +109,8 @@ def get_color_palette(pred, names, colors, bar_height):
         name = names[color_index + 1]
         ratio = counts[idx] / pixs * 100
         if ratio > 0.1:
-            print("{}  {}: {:.2f}% {}".format(color_index+1, name, ratio, colors[color_index]))
+            if show:
+                print("{}  {}: {:.2f}% {}".format(color_index+1, name, ratio, colors[color_index]))
             img = cv2.rectangle(img, (0,top_left_y), (250,bottom_right_y),
                        (int(colors[color_index][0]),int(colors[color_index][1]),int(colors[color_index][2])), -1)
             img = cv2.putText(img, "{}: {:.3f}%".format(name, ratio), (0,top_left_y+20), 5, 1, (255,255,255), 2, cv2.LINE_AA)
